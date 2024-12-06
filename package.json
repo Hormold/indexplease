@@ -1,0 +1,37 @@
+{
+  "name": "index-now",
+  "version": "1.0.0",
+  "description": "Automatically submit your website URLs to search engines using IndexNow protocol + Google Search Console",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "indexnow",
+    "seo",
+    "search-engines",
+    "sitemap"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "fast-xml-parser": "^4.3.2",
+    "@google-cloud/local-auth": "^2.1.0",
+    "@types/node": "^20.10.4",
+    "csv-parse": "^5.5.2",
+    "google-auth-library": "^9.15.0",
+    "googleapis": "^129.0.0",
+    "node-fetch": "^2.7.0",
+    "typescript": "^5.3.3",
+    "xml2js": "^0.6.2"
+  },
+  "devDependencies": {
+    "@types/csv-parse": "^1.2.2",
+    "@types/node-fetch": "^2.6.9",
+    "@types/xml2js": "^0.4.14",
+    "ts-node": "^10.9.1"
+  }
+}
