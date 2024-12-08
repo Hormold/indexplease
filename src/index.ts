@@ -116,8 +116,17 @@ async function main() {
   const allSiteUrls = await getAllSiteUrls(service);
   const selectedSiteUrl = await promptSelect("Select a site:", allSiteUrls);
 
+  if (!selectedSiteUrl) {
+    console.error("No site selected");
+    return;
+  }
+
   // Extract domain for IndexNow
-  const domain = new URL(selectedSiteUrl).hostname;
+  // Remove sc-domain: from the domain
+  console.log(`Selected site: ${selectedSiteUrl}`);
+  const fullUrl = `https://${selectedSiteUrl.replace("sc-domain:", "")}`;
+  const domain = new URL(fullUrl).hostname;
+  console.log(`Using domain: ${domain}`);
   const indexNowService = new IndexNowService(
     domain,
     process.env.INDEXNOW_KEY!
