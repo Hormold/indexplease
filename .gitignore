@@ -1,3 +1,5 @@
 .env
 account/*.json
 node_modules
+indexed-urls.json
+urls.csv

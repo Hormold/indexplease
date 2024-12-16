@@ -76,6 +76,15 @@ https://example.com/contact
 
 Then set `USE_CSV_INPUT=true` in your `.env` file.
 
+### URL History
+
+The tool automatically maintains an `indexed-urls.json` file that tracks all previously indexed URLs. This allows you to:
+- Skip already indexed URLs
+- Re-index only specific URLs
+- Keep track of your indexing history
+
+The file is created automatically on first run.
+
 ## Contributing
 
 Pull requests are welcome! For major changes, please open an issue first.

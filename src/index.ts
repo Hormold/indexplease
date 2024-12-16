@@ -103,6 +103,19 @@ async function promptSelect(
   return choices[index];
 }
 
+async function loadPreviouslyIndexedUrls(): Promise<Set<string>> {
+  try {
+    const data = await fs.promises.readFile("indexed-urls.json", "utf8");
+    return new Set(JSON.parse(data));
+  } catch {
+    return new Set();
+  }
+}
+
+async function saveIndexedUrls(urls: string[]): Promise<void> {
+  await fs.promises.writeFile("indexed-urls.json", JSON.stringify(urls));
+}
+
 async function main() {
   // Step 1: Auth setup
   const auth = new GoogleAuth({
@@ -142,6 +155,7 @@ async function main() {
   } else {
     const sitemapUrl = await getSitemapUrl(service, selectedSiteUrl);
     pagesToIndex = await getAllPagesFromSitemap(sitemapUrl);
+    pagesToIndex = pagesToIndex.reverse();
     console.log(
       `Found ${pagesToIndex.length} pages in sitemap for ${selectedSiteUrl}:`
     );
@@ -155,27 +169,67 @@ async function main() {
     ).toLowerCase() === "y";
 
   if (shouldIndex) {
-    for (const page of pagesToIndex) {
-      const response = await service.inspectUrlIndex(selectedSiteUrl, page);
-      const currentStatus =
-        response.inspectionResult.indexStatusResult.coverageState;
-      const lastCrawled =
-        response.inspectionResult.indexStatusResult.lastCrawlTime;
+    const previouslyIndexed = await loadPreviouslyIndexedUrls();
+    const newUrls = pagesToIndex.filter((url) => !previouslyIndexed.has(url));
 
-      console.log(
-        `(${page}) | Current status: ${currentStatus} | Last crawled: ${
-          lastCrawled ? new Date(lastCrawled).toLocaleString() : "never"
-        }`
-      );
+    const indexChoice = await promptSelect(
+      "What would you like to index? (Recommended: New URLs only, to speed up indexing)",
+      ["New URLs only", "All URLs", "Previously indexed URLs only"]
+    );
+
+    let urlsToProcess: string[] = [];
+    switch (indexChoice) {
+      case "New URLs only":
+        urlsToProcess = newUrls;
+        console.log(`Found ${newUrls.length} new URLs to index`);
+        break;
+      case "All URLs":
+        urlsToProcess = pagesToIndex;
+        break;
+      case "Previously indexed URLs only":
+        urlsToProcess = pagesToIndex.filter((url) =>
+          previouslyIndexed.has(url)
+        );
+        break;
     }
 
-    // Submit to IndexNow after Google Search Console
+    if (urlsToProcess.length === 0) {
+      console.log("No URLs to process");
+      return;
+    }
+
+    console.log(`Processing ${urlsToProcess.length} URLs...`);
+
+    for (const page of urlsToProcess) {
+      try {
+        const response = await service.inspectUrlIndex(selectedSiteUrl, page);
+        const currentStatus =
+          response.inspectionResult.indexStatusResult.coverageState;
+        const lastCrawled =
+          response.inspectionResult.indexStatusResult.lastCrawlTime;
+
+        console.log(
+          `(${page}) | Current status: ${currentStatus} | Last crawled: ${
+            lastCrawled ? new Date(lastCrawled).toLocaleString() : "never"
+          }`
+        );
+      } catch (error) {
+        console.error(`Error inspecting ${page}:`, error);
+      }
+    }
+
+    // Submit to IndexNow
     console.log("\nSubmitting to IndexNow providers...");
-    await indexNowService.submitToIndexNow(pagesToIndex);
+    await indexNowService.submitToIndexNow(urlsToProcess);
+
+    // Save all processed URLs
+    const allIndexed = new Set([...previouslyIndexed, ...urlsToProcess]);
+    await saveIndexedUrls([...allIndexed]);
 
     console.log(
-      `\nIndexed ${pagesToIndex.length} pages for ${selectedSiteUrl}`
+      `\nIndexed ${urlsToProcess.length} pages for ${selectedSiteUrl}`
     );
+    console.log(`Total unique URLs indexed: ${allIndexed.size}`);
   }
 
   console.log("Done.");
