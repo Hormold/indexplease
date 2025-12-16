@@ -60,6 +60,10 @@ async function getSitemapUrl(
   siteUrl: string
 ): Promise<string> {
   const sitemaps = await service.listSitemaps(siteUrl);
+  if (sitemaps.length === 0) {
+    console.error("No sitemap found for ", siteUrl);
+    return "";
+  }
   return sitemaps[0].path;
 }
 
@@ -136,8 +140,8 @@ async function main() {
 
   // Extract domain for IndexNow
   // Remove sc-domain: from the domain
-  console.log(`Selected site: ${selectedSiteUrl}`);
   const fullUrl = `https://${selectedSiteUrl.replace("sc-domain:", "")}`;
+  console.log(`Selected site: ${fullUrl}`);
   const domain = new URL(fullUrl).hostname;
   console.log(`Using domain: ${domain}`);
   const indexNowService = new IndexNowService(
@@ -157,7 +161,7 @@ async function main() {
     pagesToIndex = await getAllPagesFromSitemap(sitemapUrl);
     pagesToIndex = pagesToIndex.reverse();
     console.log(
-      `Found ${pagesToIndex.length} pages in sitemap for ${selectedSiteUrl}:`
+      `Found ${pagesToIndex.length} pages in sitemap for ${fullUrl}:`
     );
     console.log(pagesToIndex);
   }
